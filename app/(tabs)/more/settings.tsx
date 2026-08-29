@@ -5,8 +5,10 @@ import { Text } from '@/components/Text';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Chip, ChipGroup } from '@/components/Chip';
+import { TextField } from '@/components/TextField';
 import { useTheme } from '@/theme/ThemeProvider';
 import { getPreferences, updatePreferences } from '@/services/preferencesService';
+import { scheduleTriggerAlerts } from '@/services/notificationService';
 import { SUPPORTED_EMERGENCY_COUNTRIES } from '@/constants/emergencyResources';
 import { useAuthStore } from '@/state/authStore';
 import { localStore } from '@/lib/localStore';
@@ -38,6 +40,29 @@ export default function Settings() {
     else Alert.alert('Export ready', 'Your data was retrieved. (Wire this to a share sheet in production.)');
   }
 
+  function deleteAccount() {
+    const supabase = getSupabase();
+    if (!supabase) {
+      Alert.alert('Local mode', 'Use "Delete local data" instead — there is no account to delete.');
+      return;
+    }
+    Alert.alert('Delete your account?', 'This permanently deletes your account and all data. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete account',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.functions.invoke('delete-account', { body: {} });
+          if (error) Alert.alert('Failed', error.message);
+          else {
+            await localStore.clearAll();
+            await signOut();
+          }
+        },
+      },
+    ]);
+  }
+
   function deleteLocalData() {
     Alert.alert('Delete all local data?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -58,6 +83,15 @@ export default function Settings() {
         <Row label="Trigger alerts" value={prefs.triggerAlertsEnabled} onChange={(v) => patch({ triggerAlertsEnabled: v })} />
         <Row label="Motivational messages" value={prefs.motivationalNotificationsEnabled} onChange={(v) => patch({ motivationalNotificationsEnabled: v })} />
         <Row label="Check-in reminders" value={prefs.checkinRemindersEnabled} onChange={(v) => patch({ checkinRemindersEnabled: v })} />
+        <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <TextField label="Quiet hours start" placeholder="22:00" value={prefs.quietHoursStart ?? ''} onChangeText={(v) => patch({ quietHoursStart: v })} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextField label="Quiet hours end" placeholder="08:00" value={prefs.quietHoursEnd ?? ''} onChangeText={(v) => patch({ quietHoursEnd: v })} />
+          </View>
+        </View>
+        <Button label="Refresh predictive alerts" variant="outline" onPress={() => scheduleTriggerAlerts()} fullWidth style={{ marginTop: theme.spacing.xs }} />
       </Card>
 
       <Card style={{ marginBottom: theme.spacing.sm }}>
@@ -79,7 +113,8 @@ export default function Settings() {
       <Card style={{ marginBottom: theme.spacing.sm }}>
         <Text variant="label" style={{ marginBottom: theme.spacing.sm }}>Your data</Text>
         <Button label="Export my data" variant="outline" onPress={exportData} fullWidth style={{ marginBottom: theme.spacing.xs }} />
-        <Button label="Delete local data" variant="outline" onPress={deleteLocalData} fullWidth />
+        <Button label="Delete local data" variant="outline" onPress={deleteLocalData} fullWidth style={{ marginBottom: theme.spacing.xs }} />
+        <Button label="Delete my account" variant="danger" onPress={deleteAccount} fullWidth />
       </Card>
 
       <Button label="Sign out" variant="ghost" onPress={signOut} fullWidth />

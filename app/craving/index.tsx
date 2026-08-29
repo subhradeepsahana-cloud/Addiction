@@ -19,6 +19,7 @@ import { getMotivationPhotos, resolvePhotoUri } from '@/services/motivationServi
 import { sendCoachMessage } from '@/services/aiService';
 import type { SafetyClassification } from '@/lib/safety';
 import type { Craving, TriggerTag, InterventionType, DrinkingEvent } from '@/types/domain';
+import { track } from '@/services/analyticsService';
 
 type Step = 'interrupt' | 'intensity' | 'trigger' | 'intervention' | 'recheck' | 'slip' | 'done';
 
@@ -66,6 +67,7 @@ export default function CravingMode() {
     if (intensityBefore === null) return;
     const created = await startCraving(intensityBefore, trigger);
     setCraving(created);
+    track('craving_started', { intensity: intensityBefore });
     setStep('trigger');
   }
 
@@ -80,6 +82,8 @@ export default function CravingMode() {
     await completeCraving(craving.id, intensityAfter, outcome);
     setSaving(false);
     setLastOutcome(outcome);
+    track('craving_completed', { outcome });
+    if (outcome === 'drank') track('slip_logged');
     setStep(outcome === 'drank' ? 'slip' : 'done');
   }
 

@@ -13,6 +13,7 @@ import { logDrink } from '@/services/drinkService';
 import { extractDrinksFromText } from '@/services/aiService';
 import type { DrinkCategory, ServingSize, TriggerTag } from '@/types/domain';
 import { isBackendConfigured } from '@/lib/env';
+import { track } from '@/services/analyticsService';
 
 type Mode = 'quick' | 'describe';
 
@@ -54,6 +55,7 @@ export default function LogDrink() {
     });
     setSaving(false);
     setSaved(true);
+    track('drink_logged', { source: 'quick' });
     setTimeout(() => router.replace('/(tabs)'), 900);
   }
 

@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { useAuthStore } from '@/state/authStore';
 import { flushSyncQueue } from '@/lib/syncQueue';
+import { track } from '@/services/analyticsService';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function RootStack() {
   const theme = useTheme();
@@ -28,17 +30,19 @@ export default function RootLayout() {
   const init = useAuthStore((s) => s.init);
 
   useEffect(() => {
-    init();
+    init().then(() => track('app_opened'));
     flushSyncQueue().catch(() => {});
   }, [init]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <RootStack />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <RootStack />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

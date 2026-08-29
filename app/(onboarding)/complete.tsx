@@ -8,6 +8,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { useOnboardingStore } from '@/state/onboardingStore';
 import { saveProfile, completeOnboarding, setActiveGoal, saveSelectedTriggers } from '@/services/profileService';
 import { saveMotivations } from '@/services/motivationService';
+import { scheduleTriggerAlerts } from '@/services/notificationService';
+import { track } from '@/services/analyticsService';
 
 export default function Complete() {
   const theme = useTheme();
@@ -32,6 +34,8 @@ export default function Complete() {
     if (draft.triggers.length) await saveSelectedTriggers(draft.triggers);
     if (draft.motivations.length) await saveMotivations(draft.motivations.map((m) => ({ tag: m.tag, freeText: m.freeText })));
     await completeOnboarding();
+    track('onboarding_completed');
+    scheduleTriggerAlerts().catch(() => {});
     draft.reset();
     setSaving(false);
     router.replace('/(tabs)');

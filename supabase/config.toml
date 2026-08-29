@@ -1,0 +1,36 @@
+project_id = "sober-companion"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "sobercompanion://"
+additional_redirect_urls = ["sobercompanion://"]
+jwt_expiry = 3600
+enable_signup = true
+enable_confirmations = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = false
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "8MiB"
+
+[edge_runtime]
+enabled = true
